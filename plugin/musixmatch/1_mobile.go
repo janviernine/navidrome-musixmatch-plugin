@@ -68,6 +68,13 @@ func fetchLyricsFromMobileAPI(input lyrics.GetLyricsRequest, assignment mobileGU
 		utils.LogInfof("mobile_api: rejected lyrics reason=generated_pseudo_lyrics")
 	}
 
+	// The direct matcher call resolves to one Musixmatch duplicate and stops
+	// there. Sweep every lyrics-bearing candidate before giving up.
+	if resp, format, success := fetchLyricsFromMobileCandidates(input, token, assignment); success != nil {
+		utils.LogInfof("FetchLyrics: lookup succeeded source=mobile_api category=%s", success.CategoryValue())
+		return resp, format, nil, nil, success
+	}
+
 	// Damn it, that did not work.
 	err = fmt.Errorf("mobile API did not return lyrics")
 	failure = utils.NewLookupFailure("mobile_no_lyrics", "mobile_api", err).WithPhase("mobile_lyrics")
